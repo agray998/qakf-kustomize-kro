@@ -24,10 +24,14 @@ spec:
       password: string | default=${random.seededString(24, schema.metadata.uid)}
       backendPort: integer | default=8080
       frontendPort: integer | default=8080
+      backEndReplicas: integer | default=3
+      frontEndReplicas: integer | default=1
     status:
       # Fields the controller will inject into instances status.
-      deploymentConditions: ${deployment.status.conditions}
-      availableReplicas: ${deployment.status.availableReplicas}
+      frontEndDeploymentConditions: ${feDeployment.status.conditions}
+      backEndDeploymentConditions: ${beDeployment.status.conditions}
+      availableFrontEndReplicas: ${feDeployment.status.availableReplicas}
+      availableBackEndReplicas: ${beDeployment.status.availableReplicas}
 
   # Define the resources this API will manage.
   resources:
@@ -50,14 +54,14 @@ spec:
         stringData:
           password: ${schema.spec.password} # Use the password provided by user
 
-    - id: fe-deployment
+    - id: feDeployment
       template:
         apiVersion: apps/v1
         kind: Deployment
         metadata:
           name: ${schema.spec.name}-fe # Use the name provided by user
         spec:
-          replicas: 3
+          replicas: ${schema.spec.frontEndReplicas}
           selector:
             matchLabels:
               app: ${schema.spec.name}-fe
@@ -68,7 +72,7 @@ spec:
             spec:
               containers:
                 - name: ${schema.spec.name}-fe
-                  image: ${schema.spec.frontEndImageVersion} # Use the frontend image version provided by user
+                  image: public.ecr.aws/qa-wfl/qa-wfl/qakf/sfe:${schema.spec.frontEndImageVersion} # Use the frontend image version provided by user
                   env:
                   - name: COLOUR
                     valueFrom:
@@ -97,14 +101,14 @@ spec:
                 secret:
                   secretName: secrets
     
-    - id: be-deployment
+    - id: beDeployment
       template:
         apiVersion: apps/v1
         kind: Deployment
         metadata:
           name: ${schema.spec.name}-be # Use the name provided by user
         spec:
-          replicas: 3
+          replicas: ${schema.spec.backEndReplicas}
           selector:
             matchLabels:
               app: ${schema.spec.name}-be
@@ -115,31 +119,31 @@ spec:
             spec:
               containers:
                 - name: ${schema.spec.name}-be
-                  image: ${schema.spec.backEndImageVersion} # Use the backend image version provided by user
+                  image: public.ecr.aws/qa-wfl/qa-wfl/qakf/sbe:${schema.spec.backEndImageVersion} # Use the backend image version provided by user
                   ports:
                     - containerPort: ${schema.spec.backendPort}
 
-    - id: fe-service
+    - id: feService
       template:
         apiVersion: v1
         kind: Service
         metadata:
           name: frontend
         spec:
-          selector: ${fe-deployment.spec.selector.matchLabels} # Use the deployment selector
+          selector: ${feDeployment.spec.selector.matchLabels} # Use the deployment selector
           ports:
             - protocol: TCP
               port: 80
               targetPort: ${schema.spec.frontendPort}
     
-    - id: be-service
+    - id: beService
       template:
         apiVersion: v1
         kind: Service
         metadata:
           name: backend
         spec:
-          selector: ${be-deployment.spec.selector.matchLabels} # Use the deployment selector
+          selector: ${beDeployment.spec.selector.matchLabels} # Use the deployment selector
           ports:
             - protocol: TCP
               port: 80
