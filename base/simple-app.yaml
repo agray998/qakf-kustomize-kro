@@ -1,0 +1,6 @@
+apiVersion: kro.run/v1alpha1
+kind: SimpleApplication
+metadata:
+  name: simple-application-instance
+spec:
+  name: simple-application

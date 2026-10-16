@@ -1,0 +1,9 @@
+apiVersion: kro.run/v1alpha1
+kind: SimpleApplication
+metadata:
+  name: simple-application-instance
+spec:
+  name: simple-application
+  frontEndImageVersion: ... # replace '...' with the appropriate value
+  backEndImageVersion: ... # replace '...' with the appropriate value
+  colour: ... # replace '...' with the appropriate value
