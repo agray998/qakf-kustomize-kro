@@ -21,7 +21,7 @@ spec:
       frontEndImageVersion: string | default="latest"
       backEndImageVersion: string | default="latest"
       colour: string | default="red"
-      password: string | default=${random.seededString(24, schema.metadata.uid)}
+      password: string | default=""
       backendPort: integer | default=8080
       frontendPort: integer | default=8080
       backEndReplicas: integer | default=3
@@ -52,7 +52,7 @@ spec:
           name: secrets
         type: Generic
         stringData:
-          password: ${schema.spec.password} # Use the password provided by user
+          password: "${schema.spec.password == '' ? random.seededString(24, schema.metadata.uid) : schema.spec.password}" # Use the password provided by user if supplied, else generate random
 
     - id: feDeployment
       template:
